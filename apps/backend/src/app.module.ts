@@ -6,6 +6,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { createAuth } from './modules/auth/auth';
 import { DATABASE_CONNECTION, DatabaseModule } from './database/database.module';
 import { TRPCModule } from 'nestjs-trpc';
+import { HealthRouter } from './modules/system/health.router';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { TRPCModule } from 'nestjs-trpc';
   ],
   controllers: [],
   providers: [
+    HealthRouter,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,

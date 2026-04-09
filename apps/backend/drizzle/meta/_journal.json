@@ -8,6 +8,13 @@
       "when": 1775657849156,
       "tag": "0000_purple_stranger",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775745714558,
+      "tag": "0001_blue_ser_duncan",
+      "breakpoints": true
     }
   ]
 }

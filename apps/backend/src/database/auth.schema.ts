@@ -1,21 +1,40 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, text, timestamp, boolean, index } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, index, varchar, uniqueIndex } from 'drizzle-orm/pg-core';
 
 /**
- * Better Auth 核心表 - 用户表
+ * Better Auth 核心表 - 用户表（已扩展）
  */
-export const user = pgTable('user', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  emailVerified: boolean('email_verified').default(false).notNull(),
-  image: text('image'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at')
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
+export const user = pgTable(
+  'user',
+  {
+    // Better Auth 核心字段
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    email: text('email').notNull().unique(),
+    emailVerified: boolean('email_verified').default(false).notNull(),
+    image: text('image'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+
+    // 扩展字段
+    phone: varchar('phone', { length: 20 }),
+    countryCode: varchar('country_code', { length: 8 }),
+    timezone: varchar('timezone', { length: 64 }),
+    jobTitle: varchar('job_title', { length: 120 }),
+    companyName: varchar('company_name', { length: 120 }),
+    status: varchar('status', { length: 20 }).default('active').notNull(),
+    deletedAt: timestamp('deleted_at'),
+    lastLoginAt: timestamp('last_login_at'),
+  },
+  (table) => [
+    // 手机号唯一索引（国家区号 + 手机号组合唯一）
+    uniqueIndex('user_phone_unique').on(table.countryCode, table.phone),
+    index('user_status_idx').on(table.status),
+  ],
+);
 
 /**
  * Better Auth 核心表 - 会话表

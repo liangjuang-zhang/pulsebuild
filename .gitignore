@@ -27,6 +27,9 @@ out/
 build
 dist
 
+# Generated Files
+packages/trpc/src/server/index.ts
+
 
 # Debug
 npm-debug.log*

@@ -5,11 +5,13 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { APP_GUARD } from '@nestjs/core';
 import { createAuth } from './modules/auth/auth';
 import { DATABASE_CONNECTION, DatabaseModule } from './database/database.module';
+import { TRPCModule } from 'nestjs-trpc';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     DatabaseModule,
+    TRPCModule.forRoot({}),
     AuthModule.forRootAsync({
       imports: [DatabaseModule],
       inject: [DATABASE_CONNECTION],

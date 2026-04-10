@@ -15,6 +15,13 @@
       "when": 1775745714558,
       "tag": "0001_blue_ser_duncan",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775788753341,
+      "tag": "0002_worthless_thena",
+      "breakpoints": true
     }
   ]
 }

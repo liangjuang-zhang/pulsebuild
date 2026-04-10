@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { phoneNumber } from 'better-auth/plugins';
+import { expo } from '@better-auth/expo';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../database';
 
@@ -14,10 +15,18 @@ export function createAuth(database: NodePgDatabase) {
       provider: 'pg',
       schema,
     }),
+    trustedOrigins: [
+      'pulsebuild://',
+      ...(process.env.NODE_ENV === 'development'
+        ? [
+            // Expo 开发环境
+            'exp://',
+          ]
+        : []),
+    ],
     // 扩展 user 表字段
     user: {
       additionalFields: {
-        phone: { type: 'string', required: false },
         countryCode: { type: 'string', required: false },
         timezone: { type: 'string', required: false },
         jobTitle: { type: 'string', required: false },
@@ -28,8 +37,8 @@ export function createAuth(database: NodePgDatabase) {
       },
     },
     plugins: [
+      expo(),
       phoneNumber({
-        // 发送验证码（集成短信服务商）
         sendOTP: ({ phoneNumber, code }) => {
           // TODO: 集成短信服务
           console.log(`发送验证码到 ${phoneNumber}: ${code}`);

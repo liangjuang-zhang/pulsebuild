@@ -18,9 +18,9 @@ export const user = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
-
+    phoneNumber: varchar('phone_number', { length: 255 }).unique(),
+    phoneNumberVerified: boolean('phone_number_verified'),
     // 扩展字段
-    phone: varchar('phone', { length: 20 }),
     countryCode: varchar('country_code', { length: 8 }),
     timezone: varchar('timezone', { length: 64 }),
     jobTitle: varchar('job_title', { length: 120 }),
@@ -31,7 +31,7 @@ export const user = pgTable(
   },
   (table) => [
     // 手机号唯一索引（国家区号 + 手机号组合唯一）
-    uniqueIndex('user_phone_unique').on(table.countryCode, table.phone),
+    uniqueIndex('user_phone_unique').on(table.countryCode, table.phoneNumber),
     index('user_status_idx').on(table.status),
   ],
 );

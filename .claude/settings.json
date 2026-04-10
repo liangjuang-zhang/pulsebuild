@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(pnpm tsc:*)",
-      "Bash(pnpm eslint:*)"
+      "Bash(pnpm eslint:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo:*)",
+      "Bash(git remote:*)",
+      "Bash(git push:*)"
     ]
   }
 }

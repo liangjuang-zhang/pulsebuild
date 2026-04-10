@@ -7,6 +7,8 @@ import { createAuth } from './modules/auth/auth';
 import { DATABASE_CONNECTION, DatabaseModule } from './database/database.module';
 import { TRPCModule } from 'nestjs-trpc';
 import { HealthRouter } from './modules/system/health.router';
+import { GeoModule } from './modules/system/geo/geo.module';
+import { GeoRouter } from './modules/system/geo/geo.router';
 import { SmsModule } from './modules/system/sms/sms.module';
 import { SmsService } from './modules/system/sms/sms.service';
 
@@ -15,6 +17,7 @@ import { SmsService } from './modules/system/sms/sms.service';
     ConfigModule.forRoot(),
     DatabaseModule,
     SmsModule,
+    GeoModule,
     TRPCModule.forRoot({}),
     AuthModule.forRootAsync({
       imports: [DatabaseModule, SmsModule],
@@ -27,6 +30,7 @@ import { SmsService } from './modules/system/sms/sms.service';
   controllers: [],
   providers: [
     HealthRouter,
+    GeoRouter,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,

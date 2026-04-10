@@ -4,12 +4,14 @@ import { phoneNumber } from 'better-auth/plugins';
 import { expo } from '@better-auth/expo';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../database';
+import { SmsService } from '../system/sms/sms.service';
 
 /**
  * 创建 Better Auth 实例的工厂函数
  * @param database - Drizzle 数据库连接实例（通过 DI 注入）
+ * @param smsService - 短信服务实例（通过 DI 注入）
  */
-export function createAuth(database: NodePgDatabase) {
+export function createAuth(database: NodePgDatabase, smsService: SmsService) {
   return betterAuth({
     database: drizzleAdapter(database, {
       provider: 'pg',
@@ -39,9 +41,8 @@ export function createAuth(database: NodePgDatabase) {
     plugins: [
       expo(),
       phoneNumber({
-        sendOTP: ({ phoneNumber, code }) => {
-          // TODO: 集成短信服务
-          console.log(`发送验证码到 ${phoneNumber}: ${code}`);
+        sendOTP: ({ phoneNumber: phone, code }) => {
+          void smsService.sendVerificationCode(phone, code);
         },
         otpLength: 6,
         expiresIn: 300,

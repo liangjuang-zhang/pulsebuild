@@ -7,17 +7,20 @@ import { createAuth } from './modules/auth/auth';
 import { DATABASE_CONNECTION, DatabaseModule } from './database/database.module';
 import { TRPCModule } from 'nestjs-trpc';
 import { HealthRouter } from './modules/system/health.router';
+import { SmsModule } from './modules/system/sms/sms.module';
+import { SmsService } from './modules/system/sms/sms.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     DatabaseModule,
+    SmsModule,
     TRPCModule.forRoot({}),
     AuthModule.forRootAsync({
-      imports: [DatabaseModule],
-      inject: [DATABASE_CONNECTION],
-      useFactory: (database: NodePgDatabase) => ({
-        auth: createAuth(database),
+      imports: [DatabaseModule, SmsModule],
+      inject: [DATABASE_CONNECTION, SmsService],
+      useFactory: (database: NodePgDatabase, smsService: SmsService) => ({
+        auth: createAuth(database, smsService),
       }),
     }),
   ],

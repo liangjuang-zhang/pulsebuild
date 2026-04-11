@@ -11,8 +11,15 @@ import { GeoModule } from './modules/system/geo/geo.module';
 import { GeoRouter } from './modules/system/geo/geo.router';
 import { FileModule } from './modules/system/file/file.module';
 import { FileRouter } from './modules/system/file/file.router';
+import { RoleModule } from './modules/system/role/role.module';
+import { RoleRouter } from './modules/system/role/role.router';
+import { PermissionModule } from './modules/system/permission/permission.module';
+import { PermissionRouter } from './modules/system/permission/permission.router';
+import { UserModule } from './modules/system/user/user.module';
+import { UserRouter } from './modules/system/user/user.router';
 import { SmsModule } from './modules/system/sms/sms.module';
 import { SmsService } from './modules/system/sms/sms.service';
+import { PermissionGuard } from './modules/system/permission/permission.guard';
 
 @Module({
   imports: [
@@ -21,6 +28,9 @@ import { SmsService } from './modules/system/sms/sms.service';
     SmsModule,
     GeoModule,
     FileModule,
+    RoleModule,
+    PermissionModule,
+    UserModule,
     TRPCModule.forRoot({}),
     AuthModule.forRootAsync({
       imports: [DatabaseModule, SmsModule],
@@ -35,9 +45,16 @@ import { SmsService } from './modules/system/sms/sms.service';
     HealthRouter,
     GeoRouter,
     FileRouter,
+    RoleRouter,
+    PermissionRouter,
+    UserRouter,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PermissionGuard,
     },
   ],
 })

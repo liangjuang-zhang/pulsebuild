@@ -12,3 +12,6 @@ export * from './auth.schema';
 
 // 系统文件 schema
 export * from './file.schema';
+
+// RBAC 权限 schema
+export * from './rbac.schema';

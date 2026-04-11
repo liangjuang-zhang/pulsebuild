@@ -22,6 +22,20 @@
       "when": 1775788753341,
       "tag": "0002_worthless_thena",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1775874236662,
+      "tag": "0003_easy_power_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1775874587286,
+      "tag": "0004_rbac_permission_seed",
+      "breakpoints": true
     }
   ]
 }

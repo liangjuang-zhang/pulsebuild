@@ -10,6 +10,5 @@
 // Auth 模块 schema
 export * from './auth.schema';
 
-// TODO: 添加其他模块 schema
-// export * from './system.schema';
-// export * from './user.schema';
+// 系统文件 schema
+export * from './file.schema';

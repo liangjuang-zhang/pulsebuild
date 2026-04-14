@@ -49,7 +49,7 @@ export default function PhoneEntryScreen() {
 
   const phoneAccessibilityHint = useMemo(
     () =>
-      t('phone_verification.phone_accessibility_hint_with_country', {
+      t('onboarding.onboarding.phone_verification.phone_accessibility_hint_with_country', {
         callingCode: selectedCountry.callingCode,
         localExample: selectedCountry.exampleLocal,
         internationalExample: selectedCountry.exampleInternational,
@@ -72,13 +72,13 @@ export default function PhoneEntryScreen() {
     const normalizedPhone = normalizePhoneNumberForSubmission(phoneInput, selectedCountry);
 
     if (!normalizedPhone) {
-      setError(t('phone_verification.error_invalid_phone'));
+      setError(t('onboarding.phone_verification.error_invalid_phone'));
       return;
     }
 
     setLoading(true);
     setError(null);
-    setStatusMessage(t('phone_verification.status_sending_verification_code'));
+    setStatusMessage(t('onboarding.phone_verification.status_sending_verification_code'));
 
     try {
       const { error: apiError } = await authClient.phoneNumber.sendOtp({
@@ -87,25 +87,25 @@ export default function PhoneEntryScreen() {
 
       if (apiError) {
         throw new AuthError(
-          apiError.message ?? t('phone_verification.error_send_failed'),
+          apiError.message ?? t('onboarding.phone_verification.error_send_failed'),
           AuthErrorCode.UNKNOWN_ERROR,
           true,
         );
       }
 
-      setStatusMessage(t('phone_verification.status_verification_code_sent'));
-      void announceForScreenReader(t('phone_verification.code_sent_announcement'));
+      setStatusMessage(t('onboarding.phone_verification.status_verification_code_sent'));
+      void announceForScreenReader(t('onboarding.phone_verification.code_sent_announcement'));
 
       router.push({
         pathname: '/(auth)/code-verification' as const,
         params: { phone: normalizedPhone },
       });
     } catch (err) {
-      let errorMsg = t('phone_verification.error_generic');
+      let errorMsg = t('onboarding.phone_verification.error_generic');
       if (err instanceof AuthError) {
         errorMsg = err.message;
       } else if (err instanceof Error && isNetworkError(err)) {
-        errorMsg = t('phone_verification.error_connection');
+        errorMsg = t('onboarding.phone_verification.error_connection');
       } else if (err instanceof Error) {
         errorMsg = err.message;
       }
@@ -139,10 +139,10 @@ export default function PhoneEntryScreen() {
           <View style={[styles.contentWrapper, { maxWidth: maxContentWidth }]}>
             <View style={styles.header}>
               <Text variant="headlineSmall" style={styles.title}>
-                {t('phone_verification.title')}
+                {t('onboarding.phone_verification.title')}
               </Text>
               <Text variant="bodyMedium" style={styles.subtitle}>
-                {t('phone_verification.subtitle')}
+                {t('onboarding.phone_verification.subtitle')}
               </Text>
             </View>
 
@@ -152,18 +152,18 @@ export default function PhoneEntryScreen() {
               )}
 
               <PhoneNumberInput
-                label={t('phone_verification.phone_label')}
+                label={t('onboarding.phone_verification.phone_label')}
                 selectedCountry={selectedCountry}
                 onOpenCountrySelector={() => setCountryDialogVisible(true)}
-                countrySelectAccessibilityLabel={t('phone_verification.country_select_accessibility_label')}
-                countrySelectAccessibilityHint={t('phone_verification.country_select_accessibility_hint')}
+                countrySelectAccessibilityLabel={t('onboarding.phone_verification.country_select_accessibility_label')}
+                countrySelectAccessibilityHint={t('onboarding.phone_verification.country_select_accessibility_hint')}
                 value={phoneInput}
                 onChangeText={handlePhoneChange}
                 keyboardType="phone-pad"
                 returnKeyType="done"
                 onSubmitEditing={handleSubmit}
-                accessibilityLabel={t('phone_verification.phone_accessibility_label')}
-                accessibilityHint={error ? t('phone_verification.input_error_hint', { error }) : phoneAccessibilityHint}
+                accessibilityLabel={t('onboarding.phone_verification.phone_accessibility_label')}
+                accessibilityHint={error ? t('onboarding.phone_verification.input_error_hint', { error }) : phoneAccessibilityHint}
                 error={Boolean(error)}
                 editable={!loading}
                 style={{ backgroundColor: inputBackgroundColor }}
@@ -183,7 +183,7 @@ export default function PhoneEntryScreen() {
         </ScrollView>
 
         <PhoneCountryDialog
-          title={t('phone_verification.country_label')}
+          title={t('onboarding.phone_verification.country_label')}
           visible={countryDialogVisible}
           onDismiss={() => setCountryDialogVisible(false)}
           onSelectPhoneCountry={(option) => {
@@ -202,10 +202,10 @@ export default function PhoneEntryScreen() {
               loading={loading}
               style={styles.submitButton}
               contentStyle={styles.submitButtonContent}
-              accessibilityLabel={loading ? t('phone_verification.sending_code') : t('phone_verification.send_code_button')}
-              accessibilityHint={t('phone_verification.send_code_accessibility_hint')}
+              accessibilityLabel={loading ? t('onboarding.phone_verification.sending_code') : t('onboarding.phone_verification.send_code_button')}
+              accessibilityHint={t('onboarding.phone_verification.send_code_accessibility_hint')}
             >
-              {loading ? t('phone_verification.sending_code') : t('phone_verification.send_code_button')}
+              {loading ? t('onboarding.phone_verification.sending_code') : t('onboarding.phone_verification.send_code_button')}
             </Button>
           </View>
         </View>
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   keyboardContainer: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 24, paddingTop: 40 },
-  contentWrapper: { alignSelf: 'center', width: '100%' },
+  contentWrapper: { alignSelf: 'center', width: '90%' },
   header: { gap: 8, marginBottom: 32 },
   title: { fontWeight: '700' },
   subtitle: { lineHeight: 20 },

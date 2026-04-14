@@ -1,18 +1,39 @@
+/**
+ * Root Layout - App entry point with complete provider hierarchy
+ */
 import { httpBatchLink } from '@trpc/client';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Slot, useRouter, useSegments } from 'expo-router';
-import { useEffect } from 'react';
-import { ActivityIndicator, useColorScheme, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { LogBox, useColorScheme as useNativeColorScheme } from 'react-native';
+import { Slot, useNavigationContainerRef, usePathname } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider, adaptNavigationTheme } from 'react-native-paper';
 import { ThemeProvider, DefaultTheme as NavLightTheme, DarkTheme as NavDarkTheme } from '@react-navigation/native';
+import * as Sentry from '@sentry/react-native';
+import { useTranslation } from 'react-i18next';
+
 import { queryClient } from '@/lib/query-client';
 import { trpc } from '@/lib/trpc';
 import { authClient } from '@/lib/auth-client';
 import { AppLightTheme, AppDarkTheme } from '@/constants/theme';
-import { initializeSentry } from '@/lib/monitoring/sentry';
+import { initializeSentry, sentryNavigationIntegration } from '@/lib/monitoring/sentry';
+import { captureScreenView, identifyAnalyticsUser, resetAnalyticsUser } from '@/lib/monitoring/posthog';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { BottomSheetProvider } from '@/components/bottom-sheet-provider';
 import { ToastProvider } from '@/components/toast';
+import { LoadingState } from '@/components/common/loading-state';
+import { useNetworkStatus } from '@/hooks/use-network-status';
+
 // Initialize i18n for internationalization
 import '@/lib/i18n/i18n';
+
+// Suppress harmless native module warnings
+LogBox.ignoreLogs([
+  /Unable to activate keep awake/,
+  /Sending `onAnimatedValueUpdate` with no listeners registered\./,
+]);
 
 // Initialize Sentry on app startup
 initializeSentry();
@@ -41,50 +62,101 @@ const trpcClient = trpc.createClient({
   ],
 });
 
-function AuthGate() {
-  const { data: session, isPending } = authClient.useSession();
-  const segments = useSegments();
-  const router = useRouter();
+function useColorScheme(): 'light' | 'dark' {
+  const scheme = useNativeColorScheme();
+  return scheme === 'dark' ? 'dark' : 'light';
+}
 
+function RootLayoutContent() {
+  const colorScheme = useColorScheme();
+  const { t } = useTranslation();
+  const navigationRef = useNavigationContainerRef();
+  const pathname = usePathname();
+  const identifiedUserKeyRef = useRef<string | null>(null);
+
+  const { data: session, isPending } = authClient.useSession();
+
+  // Monitor network status
+  useNetworkStatus();
+
+  // Register navigation container for Sentry
+  useEffect(() => {
+    sentryNavigationIntegration.registerNavigationContainer(navigationRef);
+  }, [navigationRef]);
+
+  // Track screen views with PostHog
+  useEffect(() => {
+    if (isPending || !pathname || pathname.trim().length === 0) return;
+    void captureScreenView(pathname);
+  }, [isPending, pathname]);
+
+  // Identify user for analytics
   useEffect(() => {
     if (isPending) return;
 
-    const inAuthGroup = segments[0] === '(auth)' as string;
-
-    if (!session && !inAuthGroup) {
-      router.replace('/(auth)/phone-entry' as const);
-    } else if (session && inAuthGroup) {
-      router.replace('/(app)/(tabs)' as const);
+    if (session?.user) {
+      const nextUserKey = session.user.id;
+      if (identifiedUserKeyRef.current !== nextUserKey) {
+        identifyAnalyticsUser({
+          id: session.user.id,
+          name: session.user.name,
+        });
+        identifiedUserKeyRef.current = nextUserKey;
+        // Set user context for Sentry
+        Sentry.setUser({ id: session.user.id });
+      }
+    } else if (identifiedUserKeyRef.current !== null) {
+      resetAnalyticsUser();
+      identifiedUserKeyRef.current = null;
+      Sentry.setUser(null);
     }
-  }, [session, isPending, segments, router]);
+  }, [session, isPending]);
 
-  if (isPending) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  return <Slot />;
-}
-
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const paperTheme = colorScheme === 'dark' ? AppDarkTheme : AppLightTheme;
   const navTheme = colorScheme === 'dark' ? DarkTheme : LightTheme;
+
+  // Debug: Log theme state
+  console.log('[RootLayout] Theme:', { colorScheme, isDark: colorScheme === 'dark' });
+
+  // Show loading state during session hydration
+  if (isPending) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ErrorBoundary>
+          <PaperProvider theme={paperTheme}>
+            <LoadingState text={t('common.loading')} />
+          </PaperProvider>
+        </ErrorBoundary>
+      </GestureHandlerRootView>
+    );
+  }
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <PaperProvider theme={paperTheme}>
-          <ThemeProvider value={navTheme}>
+          <BottomSheetProvider>
             <ToastProvider>
-              <AuthGate />
+              <ThemeProvider value={navTheme}>
+                <Slot />
+              </ThemeProvider>
             </ToastProvider>
-          </ThemeProvider>
+          </BottomSheetProvider>
         </PaperProvider>
       </QueryClientProvider>
     </trpc.Provider>
+  );
+}
+
+// Wrap with Sentry for performance tracking
+const RootLayoutWithSentry = Sentry.wrap(RootLayoutContent);
+
+export default function RootLayout() {
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ErrorBoundary>
+        <RootLayoutWithSentry />
+      </ErrorBoundary>
+    </GestureHandlerRootView>
   );
 }

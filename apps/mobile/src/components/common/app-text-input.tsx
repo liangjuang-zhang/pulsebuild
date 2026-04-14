@@ -1,47 +1,73 @@
-/**
- * App TextInput - Styled text input wrapper
- */
-import type React from 'react';
-import { TextInput, StyleSheet } from 'react-native';
-import { useTheme } from 'react-native-paper';
+import React, { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react';
+import type { TextInput as NativeTextInput } from 'react-native';
+import { TextInput as PaperTextInput, type TextInputProps } from 'react-native-paper';
 
-export interface AppTextInputProps extends React.ComponentProps<typeof TextInput> {
-  mode?: 'outlined' | 'flat';
-  error?: boolean;
-  label?: string;
+export interface AppTextInputProps extends TextInputProps {
+  hidePlaceholderOnFocus?: boolean;
 }
 
-export function AppTextInput({
-  mode = 'outlined',
-  error,
-  style,
-  ...props
-}: AppTextInputProps) {
-  const theme = useTheme();
+type AppTextInputComponent = React.ForwardRefExoticComponent<
+  AppTextInputProps & React.RefAttributes<React.ComponentRef<typeof PaperTextInput>>
+> & {
+  Icon: typeof PaperTextInput.Icon;
+  Affix: typeof PaperTextInput.Affix;
+};
 
-  return (
-    <TextInput
-      style={[
-        styles.input,
-        {
-          borderColor: error ? theme.colors.error : theme.colors.outline,
-          backgroundColor: theme.dark ? '#1E1E1E' : '#FFFFFF',
-          color: theme.colors.onSurface,
+type AppTextInputHandle = React.ComponentRef<typeof PaperTextInput>;
+type InternalTextInputHandle = NativeTextInput & AppTextInputHandle;
+
+const AppTextInputBase = forwardRef<AppTextInputHandle, AppTextInputProps>(
+  ({ hidePlaceholderOnFocus = true, placeholder, onFocus, onBlur, ...props }, ref) => {
+    const [isFocused, setIsFocused] = useState(false);
+    const inputRef = useRef<InternalTextInputHandle | null>(null);
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        focus: () => inputRef.current?.focus(),
+        clear: () => inputRef.current?.clear(),
+        blur: () => inputRef.current?.blur(),
+        isFocused: () => inputRef.current?.isFocused() ?? false,
+        setNativeProps: (nativeProps: Parameters<AppTextInputHandle['setNativeProps']>[0]) => {
+          inputRef.current?.setNativeProps(nativeProps);
         },
-        style,
-      ]}
-      placeholderTextColor={theme.colors.onSurfaceVariant}
-      {...props}
-    />
-  );
-}
+        setSelection: (...args: Parameters<AppTextInputHandle['setSelection']>) => {
+          inputRef.current?.setSelection(...args);
+        },
+      }),
+      [],
+    );
 
-const styles = StyleSheet.create({
-  input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
+    const handleFocus = useCallback(
+      (event: Parameters<NonNullable<TextInputProps['onFocus']>>[0]) => {
+        setIsFocused(true);
+        onFocus?.(event);
+      },
+      [onFocus],
+    );
+
+    const handleBlur = useCallback(
+      (event: Parameters<NonNullable<TextInputProps['onBlur']>>[0]) => {
+        setIsFocused(false);
+        onBlur?.(event);
+      },
+      [onBlur],
+    );
+
+    return (
+      <PaperTextInput
+        {...props}
+        ref={inputRef}
+        placeholder={hidePlaceholderOnFocus && isFocused ? undefined : placeholder}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+      />
+    );
   },
-});
+);
+
+AppTextInputBase.displayName = 'AppTextInput';
+
+export const AppTextInput = AppTextInputBase as AppTextInputComponent;
+AppTextInput.Icon = PaperTextInput.Icon;
+AppTextInput.Affix = PaperTextInput.Affix;

@@ -1,0 +1,36 @@
+{
+  "settings": {
+    "profile_documents_desc": "Upload and manage your licences and certificates",
+    "profile_documents_shortcut_desc": "Quick access to your licences and certificates"
+  },
+  "project_form": {
+    "address_validation_suggestion_message": "We found a standardised address: {{suggestedAddress}}"
+  },
+  "user_profile_documents": {
+    "subtitle": "Store licences, certificates, and compliance files for quick access."
+  },
+  "onboarding": {
+    "profile_photo": {
+      "subtitle": "Optional, but helps teammates recognise you across projects and Connections."
+    },
+    "app_intro": {
+      "worker_features": [
+        {
+          "icon": "clipboard-list",
+          "title": "Assigned Work",
+          "description": "See only the tasks you are assigned, without project noise."
+        },
+        {
+          "icon": "format-list-checks",
+          "title": "Subtask Tracking",
+          "description": "Break work down into subtasks to keep execution organised."
+        },
+        {
+          "icon": "message-text",
+          "title": "Progress Updates",
+          "description": "Post field updates so contractors and builders stay aligned."
+        }
+      ]
+    }
+  }
+}

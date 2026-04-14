@@ -28,6 +28,11 @@ export const user = pgTable(
     status: varchar('status', { length: 20 }).default('active').notNull(),
     deletedAt: timestamp('deleted_at'),
     lastLoginAt: timestamp('last_login_at'),
+    // Sync tracking field (for WatermelonDB sync)
+    lastModified: timestamp('last_modified', { precision: 3 })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
   },
   (table) => [
     // 手机号唯一索引（国家区号 + 手机号组合唯一）

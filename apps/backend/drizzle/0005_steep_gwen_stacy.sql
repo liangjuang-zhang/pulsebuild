@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "last_modified" timestamp (3) DEFAULT now() NOT NULL;

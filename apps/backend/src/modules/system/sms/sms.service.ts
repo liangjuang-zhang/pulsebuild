@@ -28,12 +28,12 @@ export class SmsService {
   }
 
   async sendVerificationCode(phone: string, code: string): Promise<void> {
-    const message = `【PulseBuild】您的验证码是 ${code}，${Math.floor(300 / 60)} 分钟内有效。`;
+    const message = `Your PulseBuild verification code is ${code}. Valid for ${Math.floor(300 / 60)} minutes. Do not share this code.`;
     await this.send(phone, message, 'verification-code');
   }
 
   async sendInviteLink(phone: string, inviteUrl: string): Promise<void> {
-    const message = `【PulseBuild】您已被邀请加入团队，点击链接注册: ${inviteUrl}`;
+    const message = `You have been invited to join PulseBuild. Click to register: ${inviteUrl}`;
     await this.send(phone, message, 'invite-link');
   }
 

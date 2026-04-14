@@ -41,8 +41,8 @@ export function createAuth(database: NodePgDatabase, smsService: SmsService) {
     plugins: [
       expo(),
       phoneNumber({
-        sendOTP: ({ phoneNumber: phone, code }) => {
-          void smsService.sendVerificationCode(phone, code);
+        sendOTP: async ({ phoneNumber: phone, code }) => {
+          await smsService.sendVerificationCode(phone, code);
         },
         otpLength: 6,
         expiresIn: 300,

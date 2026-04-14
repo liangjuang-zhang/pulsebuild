@@ -16,5 +16,13 @@
   "packageManager": "pnpm@9.0.0",
   "engines": {
     "node": ">=18"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "nestjs-trpc>@nestjs/common": ">=11.0.0",
+        "nestjs-trpc>@nestjs/core": ">=11.0.0"
+      }
+    }
   }
 }

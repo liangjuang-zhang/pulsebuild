@@ -1,142 +1,233 @@
-import { useState } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { Button, Text, TextInput, HelperText } from 'react-native-paper';
-import { useRouter } from 'expo-router';
+/**
+ * Phone Entry Screen
+ * Internationalized phone number entry with country selector
+ */
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { Button, Text, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { PhoneCountryDialog, PhoneNumberInput } from '@/components/common';
+import { TOUCH_TARGET } from '@/constants/ui';
+import { AuthError, AuthErrorCode } from '@/lib/types/auth-errors';
+import { announceForScreenReader } from '@/lib/utils/accessibility';
+import { isNetworkError } from '@/lib/utils/network-error';
+import {
+  PHONE_COUNTRY_OPTIONS,
+  type PhoneCountryOption,
+  formatPhoneInput,
+  normalizePhoneNumberForSubmission,
+} from '@/lib/utils/phone-input';
 import { authClient } from '@/lib/auth-client';
 
-const COUNTRY_CODES = [
-  { label: '+86 中国', value: '+86' },
-  { label: '+61 澳大利亚', value: '+61' },
-  { label: '+1 美国', value: '+1' },
-  { label: '+44 英国', value: '+44' },
-];
+export default function PhoneEntryScreen() {
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+  const horizontalPadding = isLandscape ? 28 : 20;
+  const maxContentWidth = isLandscape ? 760 : 560;
 
-export default function PhoneEntry() {
-  const router = useRouter();
-  const [countryCode, setCountryCode] = useState('+86');
-  const [phone, setPhone] = useState('');
+  const [phoneInput, setPhoneInput] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [countryDialogVisible, setCountryDialogVisible] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<PhoneCountryOption>(
+    PHONE_COUNTRY_OPTIONS[0],
+  );
 
-  const fullPhoneNumber = `${countryCode}${phone.replace(/\s/g, '')}`;
-  const isValidPhone = phone.replace(/\s/g, '').length >= 8;
+  const inputBackgroundColor = theme.dark ? '#1E1E1E' : '#FFFFFF';
 
-  const handleSendOtp = async () => {
-    if (!isValidPhone) {
-      setError('请输入有效的手机号');
+  const phoneAccessibilityHint = useMemo(
+    () =>
+      t('phone_verification.phone_accessibility_hint_with_country', {
+        callingCode: selectedCountry.callingCode,
+        localExample: selectedCountry.exampleLocal,
+        internationalExample: selectedCountry.exampleInternational,
+      }),
+    [selectedCountry, t],
+  );
+
+  useEffect(() => {
+    if (error) {
+      void announceForScreenReader(error);
+    }
+  }, [error]);
+
+  const handlePhoneChange = useCallback((text: string) => {
+    if (error) setError(null);
+    setPhoneInput(formatPhoneInput(text));
+  }, [error]);
+
+  const handleSubmit = useCallback(async () => {
+    const normalizedPhone = normalizePhoneNumberForSubmission(phoneInput, selectedCountry);
+
+    if (!normalizedPhone) {
+      setError(t('phone_verification.error_invalid_phone'));
       return;
     }
 
     setLoading(true);
-    setError('');
+    setError(null);
+    setStatusMessage(t('phone_verification.status_sending_verification_code'));
 
     try {
       const { error: apiError } = await authClient.phoneNumber.sendOtp({
-        phoneNumber: fullPhoneNumber,
+        phoneNumber: normalizedPhone,
       });
 
       if (apiError) {
-        setError(apiError.message ?? '发送验证码失败');
-        return;
+        throw new AuthError(
+          apiError.message ?? t('phone_verification.error_send_failed'),
+          AuthErrorCode.UNKNOWN_ERROR,
+          true,
+        );
       }
+
+      setStatusMessage(t('phone_verification.status_verification_code_sent'));
+      void announceForScreenReader(t('phone_verification.code_sent_announcement'));
 
       router.push({
         pathname: '/(auth)/code-verification' as const,
-        params: { phone: fullPhoneNumber, countryCode },
+        params: { phone: normalizedPhone },
       });
-    } catch (e) {
-      setError('网络错误，请重试');
+    } catch (err) {
+      let errorMsg = t('phone_verification.error_generic');
+      if (err instanceof AuthError) {
+        errorMsg = err.message;
+      } else if (err instanceof Error && isNetworkError(err)) {
+        errorMsg = t('phone_verification.error_connection');
+      } else if (err instanceof Error) {
+        errorMsg = err.message;
+      }
+      setError(errorMsg);
+      setStatusMessage(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [phoneInput, selectedCountry, t]);
+
+  const normalizedPhone = normalizePhoneNumberForSubmission(phoneInput, selectedCountry);
+  const isSubmitDisabled = loading || !normalizedPhone;
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.colors.background }]}
+      edges={['top', 'left', 'right', 'bottom']}
     >
-      <View style={styles.content}>
-        <Text variant="headlineMedium" style={styles.title}>
-          输入手机号
-        </Text>
-        <Text variant="bodyLarge" style={styles.subtitle}>
-          我们将发送验证码到你的手机
-        </Text>
-
-        <View style={styles.phoneRow}>
-          <TextInput
-            mode="outlined"
-            label="区号"
-            value={countryCode}
-            onChangeText={setCountryCode}
-            style={styles.countryCodeInput}
-            keyboardType="phone-pad"
-          />
-          <TextInput
-            mode="outlined"
-            label="手机号"
-            value={phone}
-            onChangeText={(text) => {
-              setPhone(text);
-              setError('');
-            }}
-            style={styles.phoneInput}
-            keyboardType="phone-pad"
-            autoFocus
-          />
-        </View>
-
-        <HelperText type="error" visible={!!error}>
-          {error}
-        </HelperText>
-
-        <Button
-          mode="contained"
-          onPress={handleSendOtp}
-          loading={loading}
-          disabled={loading || !isValidPhone}
-          style={styles.button}
-          contentStyle={styles.buttonContent}
+      <KeyboardAvoidingView
+        style={styles.keyboardContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingHorizontal: horizontalPadding },
+          ]}
+          keyboardShouldPersistTaps="handled"
         >
-          发送验证码
-        </Button>
-      </View>
-    </KeyboardAvoidingView>
+          <View style={[styles.contentWrapper, { maxWidth: maxContentWidth }]}>
+            <View style={styles.header}>
+              <Text variant="headlineSmall" style={styles.title}>
+                {t('phone_verification.title')}
+              </Text>
+              <Text variant="bodyMedium" style={styles.subtitle}>
+                {t('phone_verification.subtitle')}
+              </Text>
+            </View>
+
+            <View style={styles.content}>
+              {statusMessage && (
+                <Text style={styles.statusMessage}>{statusMessage}</Text>
+              )}
+
+              <PhoneNumberInput
+                label={t('phone_verification.phone_label')}
+                selectedCountry={selectedCountry}
+                onOpenCountrySelector={() => setCountryDialogVisible(true)}
+                countrySelectAccessibilityLabel={t('phone_verification.country_select_accessibility_label')}
+                countrySelectAccessibilityHint={t('phone_verification.country_select_accessibility_hint')}
+                value={phoneInput}
+                onChangeText={handlePhoneChange}
+                keyboardType="phone-pad"
+                returnKeyType="done"
+                onSubmitEditing={handleSubmit}
+                accessibilityLabel={t('phone_verification.phone_accessibility_label')}
+                accessibilityHint={error ? t('phone_verification.input_error_hint', { error }) : phoneAccessibilityHint}
+                error={Boolean(error)}
+                editable={!loading}
+                style={{ backgroundColor: inputBackgroundColor }}
+              />
+
+              {error && (
+                <Text
+                  style={[styles.errorText, { color: theme.colors.error }]}
+                  accessibilityLiveRegion="polite"
+                  accessibilityRole="alert"
+                >
+                  {error}
+                </Text>
+              )}
+            </View>
+          </View>
+        </ScrollView>
+
+        <PhoneCountryDialog
+          title={t('phone_verification.country_label')}
+          visible={countryDialogVisible}
+          onDismiss={() => setCountryDialogVisible(false)}
+          onSelectPhoneCountry={(option) => {
+            setSelectedCountry(option);
+            setCountryDialogVisible(false);
+          }}
+          selectedPhoneCountry={selectedCountry}
+        />
+
+        <View style={[styles.footer, { borderTopColor: theme.colors.outlineVariant }]}>
+          <View style={[styles.contentWrapper, styles.footerInner, { maxWidth: maxContentWidth }]}>
+            <Button
+              mode="contained"
+              onPress={handleSubmit}
+              disabled={isSubmitDisabled}
+              loading={loading}
+              style={styles.submitButton}
+              contentStyle={styles.submitButtonContent}
+              accessibilityLabel={loading ? t('phone_verification.sending_code') : t('phone_verification.send_code_button')}
+              accessibilityHint={t('phone_verification.send_code_accessibility_hint')}
+            >
+              {loading ? t('phone_verification.sending_code') : t('phone_verification.send_code_button')}
+            </Button>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-  },
-  title: {
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    marginBottom: 32,
-    opacity: 0.7,
-  },
-  phoneRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  countryCodeInput: {
-    width: 100,
-  },
-  phoneInput: {
-    flex: 1,
-  },
-  button: {
-    marginTop: 16,
-  },
-  buttonContent: {
-    paddingVertical: 8,
-  },
+  safeArea: { flex: 1 },
+  keyboardContainer: { flex: 1 },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingBottom: 24, paddingTop: 40 },
+  contentWrapper: { alignSelf: 'center', width: '100%' },
+  header: { gap: 8, marginBottom: 32 },
+  title: { fontWeight: '700' },
+  subtitle: { lineHeight: 20 },
+  content: { gap: 16 },
+  statusMessage: { marginBottom: 12, fontStyle: 'italic' },
+  errorText: { marginTop: 6 },
+  footer: { borderTopWidth: StyleSheet.hairlineWidth, paddingVertical: 12 },
+  footerInner: { paddingBottom: 4 },
+  submitButton: { minHeight: TOUCH_TARGET.MIN },
+  submitButtonContent: { minHeight: TOUCH_TARGET.MIN },
 });

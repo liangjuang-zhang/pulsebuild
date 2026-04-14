@@ -1,0 +1,31 @@
+{
+  "profile_photo": {
+    "subtitle": "Optional, but helps teammates recognise you across projects and Connections."
+  },
+  "notifications": {
+    "benefits": [
+      "Get alerted when tasks are assigned to you.",
+      "Know immediately when task statuses change.",
+      "Never miss key project updates."
+    ]
+  },
+  "app_intro": {
+    "worker_features": [
+      {
+        "icon": "clipboard-list",
+        "title": "Assigned Work",
+        "description": "See only the tasks you are assigned, without project noise."
+      },
+      {
+        "icon": "format-list-checks",
+        "title": "Subtask Tracking",
+        "description": "Break work down into subtasks to keep execution organised."
+      },
+      {
+        "icon": "message-text",
+        "title": "Progress Updates",
+        "description": "Post field updates so contractors and builders stay aligned."
+      }
+    ]
+  }
+}

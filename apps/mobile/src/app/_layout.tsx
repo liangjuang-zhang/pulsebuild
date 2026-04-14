@@ -2,11 +2,28 @@ import { httpBatchLink } from '@trpc/client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
-import { PaperProvider } from 'react-native-paper';
+import { ActivityIndicator, useColorScheme, View } from 'react-native';
+import { PaperProvider, adaptNavigationTheme } from 'react-native-paper';
+import { ThemeProvider, DefaultTheme as NavLightTheme, DarkTheme as NavDarkTheme } from '@react-navigation/native';
 import { queryClient } from '@/lib/query-client';
 import { trpc } from '@/lib/trpc';
 import { authClient } from '@/lib/auth-client';
+import { AppLightTheme, AppDarkTheme } from '@/constants/theme';
+import { initializeSentry } from '@/lib/monitoring/sentry';
+import { ToastProvider } from '@/components/toast';
+// Initialize i18n for internationalization
+import '@/lib/i18n/i18n';
+
+// Initialize Sentry on app startup
+initializeSentry();
+
+// Adapt Paper theme for Navigation
+const { LightTheme, DarkTheme } = adaptNavigationTheme({
+  reactNavigationLight: NavLightTheme,
+  reactNavigationDark: NavDarkTheme,
+  materialLight: AppLightTheme,
+  materialDark: AppDarkTheme,
+});
 
 const trpcClient = trpc.createClient({
   links: [
@@ -53,11 +70,19 @@ function AuthGate() {
 }
 
 export default function RootLayout() {
+  const colorScheme = useColorScheme();
+  const paperTheme = colorScheme === 'dark' ? AppDarkTheme : AppLightTheme;
+  const navTheme = colorScheme === 'dark' ? DarkTheme : LightTheme;
+
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <PaperProvider>
-          <AuthGate />
+        <PaperProvider theme={paperTheme}>
+          <ThemeProvider value={navTheme}>
+            <ToastProvider>
+              <AuthGate />
+            </ToastProvider>
+          </ThemeProvider>
         </PaperProvider>
       </QueryClientProvider>
     </trpc.Provider>

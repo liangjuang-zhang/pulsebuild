@@ -1,0 +1,123 @@
+{
+  "layout": {
+    "next_button": "下一步",
+    "skip_button": "跳过",
+    "continue_button": "继续",
+    "get_started_button": "开始使用",
+    "skip_for_now": "暂时跳过",
+    "step_announcement": "第 {{current}} 步，共 {{total}} 步。{{title}}",
+    "back_accessibility_label": "返回上一步",
+    "back_accessibility_hint": "返回上一个引导页面",
+    "skip_accessibility_label": "跳过当前步骤",
+    "skip_accessibility_hint": "跳过此步骤并使用默认值",
+    "next_accessibility_hint": "进入下一个引导步骤"
+  },
+  "progress": {
+    "step_label": "第 {{current}} 步，共 {{total}} 步"
+  },
+  "personal_info": {
+    "title": "填写您的信息",
+    "subtitle": "添加我们将用于所有项目的个人资料。姓名为必填项。",
+    "contact_unavailable_error": "无法使用这些联系方式创建新账户。请检查信息或登录已有账户。",
+    "contact_validation_error": "暂时无法验证您的联系方式，请重试。",
+    "full_name_label": "姓名 *",
+    "full_name_placeholder": "输入您的姓名",
+    "full_name_accessibility_label": "姓名",
+    "full_name_accessibility_hint": "输入您的姓名，此为必填项。",
+    "full_name_accessibility_hint_error": "姓名错误：{{error}}",
+    "phone_number_label": "手机号码",
+    "phone_number_accessibility_label": "手机号码",
+    "phone_number_accessibility_hint": "从账户预填，只读",
+    "job_title_label": "职位",
+    "job_title_placeholder": "例如：项目经理",
+    "job_title_accessibility_label": "职位",
+    "job_title_accessibility_hint": "可选字段，填写您的职位名称",
+    "email_label": "邮箱",
+    "email_placeholder": "name@company.com",
+    "email_accessibility_label": "邮箱地址",
+    "email_accessibility_hint": "可选字段，请输入有效邮箱格式。",
+    "email_accessibility_hint_error": "邮箱错误：{{error}}",
+    "company_name_label": "公司名称",
+    "company_name_placeholder": "公司名称",
+    "company_name_accessibility_label": "公司名称",
+    "company_name_accessibility_hint": "可选字段，填写您的公司"
+  },
+  "profile_photo": {
+    "title": "添加头像照片",
+    "subtitle": "可选，但有助于团队成员在项目和连接中识别您。",
+    "permission_denied": "权限被拒绝",
+    "permission_message": "需要相机或相册访问权限。",
+    "permission_source_message": "PulseBuild 需要 {{source}} 权限来添加头像照片。",
+    "open_settings": "打开设置",
+    "continue_without": "不添加照片继续",
+    "camera_option": "拍照",
+    "photo_library_option": "相册",
+    "tap_to_select": "点击选择照片",
+    "photo_selected_accessibility": "已选择头像照片",
+    "camera_accessibility_label": "使用相机拍摄头像",
+    "camera_accessibility_hint": "打开相机拍摄方形头像照片",
+    "library_accessibility_label": "从相册选择头像",
+    "library_accessibility_hint": "打开相册选择头像照片",
+    "remove_accessibility_label": "移除已选择的头像照片",
+    "remove_accessibility_hint": "移除当前选择的头像照片",
+    "skip_hint": "您可以跳过此步骤，稍后在设置中添加照片。",
+    "continue_disabled_hint": "添加照片以启用继续按钮，或使用跳过稍后完成。",
+    "camera_permission_required": "拍照需要相机权限。",
+    "camera_error": "打开相机失败，请重试。",
+    "library_permission_required": "选择照片需要相册权限。",
+    "library_error": "打开相册失败，请重试。"
+  },
+  "notifications": {
+    "title": "保持联系",
+    "subtitle": "启用通知以获取项目和任务的及时更新。",
+    "benefits": [
+      "当任务分配给您时立即收到提醒。",
+      "任务状态变更时立刻知晓。",
+      "不错过关键项目更新。"
+    ],
+    "enable_button": "启用通知",
+    "enabling": "启用中...",
+    "enable_accessibility_hint": "请求权限并继续引导流程",
+    "permission_request_error": "无法请求通知权限。"
+  },
+  "welcome": {
+    "title": "欢迎，{{name}}！",
+    "subtitle": "您已准备好在线或离线管理项目工作，并扩展您的连接网络。",
+    "next_up": "下一步",
+    "feature_highlights_title": "即刻可用",
+    "completion_error": "完成引导设置失败。",
+    "fallback_name": "新用户",
+    "feature_highlights": [
+      {
+        "icon": "wifi-off",
+        "title": "项目工作离线可用",
+        "description": "在现场信号不佳时，可查看项目详情、任务、缺陷、日志、工时表和已保存的更新。"
+      },
+      {
+        "icon": "account-multiple-plus",
+        "title": "连接助您组建团队",
+        "description": "使用连接功能，随时联系信任的建筑商、承包商和工人，便于未来邀请和协作。"
+      }
+    ],
+    "generic_next_steps": [
+      "打开您的项目列表",
+      "加入或创建项目",
+      "通过项目成员身份和任务分配开始协作"
+    ],
+    "builder_next_steps": [
+      "创建您的第一个项目",
+      "添加任务和依赖关系",
+      "邀请承包商协作"
+    ],
+    "worker_next_steps": [
+      "查看分配给您的任务",
+      "创建子任务进行日常执行",
+      "分享任务和子任务更新"
+    ],
+    "subcontractor_next_steps": [
+      "查看分配的任务",
+      "设置您的可用时间",
+      "从现场分享进度更新"
+    ]
+  }
+}

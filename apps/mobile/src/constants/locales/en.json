@@ -1265,6 +1265,8 @@
       "subtitle": "Add the profile details we'll use across your projects. Your name is required to continue.",
       "contact_unavailable_error": "We couldn't use those contact details for a new account. Please review them or sign in if you already have an account.",
       "contact_validation_error": "We couldn't verify your contact details right now. Please try again.",
+      "email_already_taken": "This email address is already associated with another account.",
+      "phone_already_taken": "This phone number is already associated with another account.",
       "full_name_label": "Full Name *",
       "full_name_placeholder": "Enter your full name",
       "full_name_accessibility_label": "Full name",

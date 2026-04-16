@@ -22,6 +22,8 @@ export const authClient = createAuthClient({
         jobTitle: { type: 'string', required: false },
         companyName: { type: 'string', required: false },
         status: { type: 'string', required: false },
+        onboardingCompletedAt: { type: 'date', required: false },
+        onboardingSkippedSteps: { type: 'string', required: false },
         deletedAt: { type: 'date', required: false },
         lastLoginAt: { type: 'date', required: false },
       },

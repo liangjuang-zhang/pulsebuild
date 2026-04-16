@@ -6,7 +6,6 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { LogBox, useColorScheme as useNativeColorScheme } from 'react-native';
 import { Slot, useNavigationContainerRef, usePathname } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider, adaptNavigationTheme } from 'react-native-paper';
@@ -24,7 +23,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { BottomSheetProvider } from '@/components/bottom-sheet-provider';
 import { ToastProvider } from '@/components/toast';
 import { LoadingState } from '@/components/common/loading-state';
-import { useNetworkStatus } from '@/hooks/use-network-status';
+import { useAuthSession, useAuthSessionSync } from '@/stores/auth-session-store';
 
 // Initialize i18n for internationalization
 import '@/lib/i18n/i18n';
@@ -73,11 +72,10 @@ function RootLayoutContent() {
   const navigationRef = useNavigationContainerRef();
   const pathname = usePathname();
   const identifiedUserKeyRef = useRef<string | null>(null);
+  const { isHydrating, session } = useAuthSession();
 
-  const { data: session, isPending } = authClient.useSession();
-
-  // Monitor network status
-  useNetworkStatus();
+  // Sync remote session + local snapshot into Zustand store
+  useAuthSessionSync();
 
   // Register navigation container for Sentry
   useEffect(() => {
@@ -86,20 +84,20 @@ function RootLayoutContent() {
 
   // Track screen views with PostHog
   useEffect(() => {
-    if (isPending || !pathname || pathname.trim().length === 0) return;
+    if (isHydrating || !pathname || pathname.trim().length === 0) return;
     void captureScreenView(pathname);
-  }, [isPending, pathname]);
+  }, [isHydrating, pathname]);
 
   // Identify user for analytics
   useEffect(() => {
-    if (isPending) return;
+    if (isHydrating) return;
 
     if (session?.user) {
       const nextUserKey = session.user.id;
       if (identifiedUserKeyRef.current !== nextUserKey) {
         identifyAnalyticsUser({
           id: session.user.id,
-          name: session.user.name,
+          name: session.user.name ?? undefined,
         });
         identifiedUserKeyRef.current = nextUserKey;
         // Set user context for Sentry
@@ -110,16 +108,13 @@ function RootLayoutContent() {
       identifiedUserKeyRef.current = null;
       Sentry.setUser(null);
     }
-  }, [session, isPending]);
+  }, [session, isHydrating]);
 
   const paperTheme = colorScheme === 'dark' ? AppDarkTheme : AppLightTheme;
   const navTheme = colorScheme === 'dark' ? DarkTheme : LightTheme;
 
-  // Debug: Log theme state
-  console.log('[RootLayout] Theme:', { colorScheme, isDark: colorScheme === 'dark' });
-
   // Show loading state during session hydration
-  if (isPending) {
+  if (isHydrating) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <ErrorBoundary>

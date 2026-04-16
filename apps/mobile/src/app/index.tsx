@@ -1,13 +1,22 @@
 import { Redirect } from 'expo-router';
-import { authClient } from '@/lib/auth-client';
+import { useAuthSession } from '@/stores/auth-session-store';
+import { useEffect } from 'react';
 
 export default function Index() {
-  const { data: session } = authClient.useSession();
+  const { isHydrating, session } = useAuthSession();
 
-  if (session) {
-    return <Redirect href="/(app)/(tabs)" />;
+  if (isHydrating) {
+    return null;
   }
 
-  return <Redirect href="/(auth)/phone-entry" />;
+  if (!session) {
+    return <Redirect href="/(auth)/phone-entry" />;
+  }
+
+  if (!session.user.onboardingCompletedAt) {
+    return <Redirect href="/(onboarding)/personal-info" />;
+  }
+
+  return <Redirect href="/(app)/(tabs)" />;
 }
 

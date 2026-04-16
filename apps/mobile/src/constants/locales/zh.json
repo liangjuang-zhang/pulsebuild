@@ -1264,6 +1264,8 @@
       "subtitle": "填写将在各项目中使用的资料信息。您需要填写姓名后才能继续。",
       "contact_unavailable_error": "这些联系方式无法用于新账户。请检查信息，或如果您已有账户请直接登录。",
       "contact_validation_error": "暂时无法验证您的联系方式，请重试。",
+      "email_already_taken": "该邮箱已被其他账户使用。",
+      "phone_already_taken": "该手机号已被其他账户使用。",
       "full_name_label": "全名 *",
       "full_name_placeholder": "输入你的全名",
       "full_name_accessibility_label": "全名",

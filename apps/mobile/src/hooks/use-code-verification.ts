@@ -5,10 +5,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { AuthError, AuthErrorCode } from '@/lib/types/auth-errors';
 import { announceForScreenReader } from '@/lib/utils/accessibility';
 import { isNetworkError } from '@/lib/utils/network-error';
 import { authClient } from '@/lib/auth-client';
+import { useAuthSessionStore } from '@/stores/auth-session-store';
+import { syncDatabase } from '@/lib/database/sync-manager';
 
 const RESEND_COOLDOWN = 60;
 
@@ -32,6 +33,7 @@ export function useCodeVerification() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const codeInputRef = useRef<any>(null);
+  const refreshSession = useAuthSessionStore((s) => s.refreshSession);
 
   // Auto-focus input on mount
   useEffect(() => {
@@ -70,11 +72,10 @@ export function useCodeVerification() {
       });
 
       if (apiError) {
-        throw new AuthError(
-          apiError.message ?? t('onboarding.phone_verification.error_wrong_code'),
-          AuthErrorCode.INVALID_CODE,
-          true,
-        );
+        setError(apiError.message ?? t('onboarding.phone_verification.error_wrong_code'));
+        setStatusMessage(null);
+        setLoading(false);
+        return;
       }
 
       setStatusMessage(t('onboarding.phone_verification.status_verification_successful'));
@@ -84,15 +85,24 @@ export function useCodeVerification() {
       await authClient.updateUser({
         timezone: getDeviceTimezone(),
       });
-    } catch (err) {
-      let errorMsg = t('onboarding.phone_verification.error_generic');
-      if (err instanceof AuthError) {
-        errorMsg = err.message;
-      } else if (err instanceof Error && isNetworkError(err)) {
-        errorMsg = t('onboarding.phone_verification.error_connection');
-      } else if (err instanceof Error) {
-        errorMsg = err.message;
+
+      // 执行 sync pull，从服务器获取用户数据写入本地
+      // 这样用户记录会有正确的 _status: synced
+      try {
+        await syncDatabase();
+        console.log('[CodeVerification] Sync completed after login');
+      } catch (syncError) {
+        console.warn('[CodeVerification] Sync failed after login:', syncError);
       }
+
+      // 刷新 store，触发路由跳转
+      await refreshSession();
+    } catch (err) {
+      const errorMsg = err instanceof Error && isNetworkError(err)
+        ? t('onboarding.phone_verification.error_connection')
+        : err instanceof Error
+          ? err.message
+          : t('onboarding.phone_verification.error_generic');
       setError(errorMsg);
       setStatusMessage(null);
     } finally {
@@ -111,23 +121,21 @@ export function useCodeVerification() {
       });
 
       if (apiError) {
-        throw new AuthError(
-          apiError.message ?? t('onboarding.phone_verification.error_resend_failed'),
-          AuthErrorCode.UNKNOWN_ERROR,
-          true,
-        );
+        setError(apiError.message ?? t('onboarding.phone_verification.error_resend_failed'));
+        setStatusMessage(null);
+        setResending(false);
+        return;
       }
 
       setCountdown(RESEND_COOLDOWN);
       setStatusMessage(t('onboarding.phone_verification.status_new_code_sent'));
       void announceForScreenReader(t('onboarding.phone_verification.code_resent_announcement'));
     } catch (err) {
-      let errorMsg = t('onboarding.phone_verification.error_resend_failed');
-      if (err instanceof Error && isNetworkError(err)) {
-        errorMsg = t('onboarding.phone_verification.error_connection');
-      } else if (err instanceof Error) {
-        errorMsg = err.message;
-      }
+      const errorMsg = err instanceof Error && isNetworkError(err)
+        ? t('onboarding.phone_verification.error_connection')
+        : err instanceof Error
+          ? err.message
+          : t('onboarding.phone_verification.error_resend_failed');
       setError(errorMsg);
       setStatusMessage(null);
     } finally {

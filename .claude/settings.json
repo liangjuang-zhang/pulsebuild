@@ -40,10 +40,26 @@
       "WebFetch(domain:docs.expo.dev)",
       "Bash(cp \"C:/projects/pulsebuild-projects/pulsebuild-app/constants/locales/en.json\" \"c:/projects/pulsebuild/apps/mobile/src/constants/locales/en.json\")",
       "Bash(cp \"C:/projects/pulsebuild-projects/pulsebuild-app/constants/locales/zh.json\" \"c:/projects/pulsebuild/apps/mobile/src/constants/locales/zh.json\")",
-      "Bash(cp \"C:/projects/pulsebuild-projects/pulsebuild-app/constants/locales/en-GB.json\" \"c:/projects/pulsebuild/apps/mobile/src/constants/locales/en-GB.json\")"
+      "Bash(cp \"C:/projects/pulsebuild-projects/pulsebuild-app/constants/locales/en-GB.json\" \"c:/projects/pulsebuild/apps/mobile/src/constants/locales/en-GB.json\")",
+      "Bash(pnpm info:*)",
+      "WebFetch(domain:zenn.dev)",
+      "Bash(npx expo:*)",
+      "Bash(timeout 30 head -20)",
+      "WebFetch(domain:watermelondb.dev)",
+      "Bash(ls node_modules/nestjs-trpc/dist/*.d.ts)",
+      "Bash(cat node_modules/nestjs-trpc/dist/decorators/index.d.ts)",
+      "Bash(cat node_modules/nestjs-trpc/dist/decorators.d.ts)",
+      "Bash(cat node_modules/nestjs-trpc/dist/interfaces/*.d.ts)",
+      "Bash(find node_modules/nestjs-trpc -name \"*.d.ts\" -exec grep -l \"Context\" {} \\\\;)",
+      "Bash(find node_modules/nestjs-trpc -name \"*.js\" -exec grep -l \"createContext\\\\|req\" {} \\\\;)",
+      "Bash(find node_modules/nestjs-trpc -name \"*.d.ts\" -exec grep -l \"middleware\\\\|TRPCModuleOptions\" {} \\\\;)",
+      "Bash(find node_modules/nestjs-trpc/dist/interfaces -name \"*.d.ts\" -exec cat {} \\\\;)",
+      "WebFetch(domain:trpc.io)"
     ],
     "additionalDirectories": [
-      "c:\\projects\\pulsebuild\\apps\\mobile\\src\\constants\\locales"
+      "c:\\projects\\pulsebuild\\apps\\mobile\\src\\constants\\locales",
+      "c:\\projects\\pulsebuild\\apps\\backend\\src\\modules\\system\\file\\storage",
+      "c:\\projects\\pulsebuild\\apps\\backend\\src\\common\\throttling"
     ]
   }
 }

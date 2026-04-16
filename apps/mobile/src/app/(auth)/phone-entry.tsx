@@ -17,7 +17,6 @@ import { Button, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PhoneCountryDialog, PhoneNumberInput } from '@/components/common';
 import { TOUCH_TARGET } from '@/constants/ui';
-import { AuthError, AuthErrorCode } from '@/lib/types/auth-errors';
 import { announceForScreenReader } from '@/lib/utils/accessibility';
 import { isNetworkError } from '@/lib/utils/network-error';
 import {
@@ -44,6 +43,14 @@ export default function PhoneEntryScreen() {
   const [selectedCountry, setSelectedCountry] = useState<PhoneCountryOption>(
     PHONE_COUNTRY_OPTIONS[0],
   );
+
+  // 组件挂载时清理任何残留状态
+  useEffect(() => {
+    setPhoneInput('');
+    setError(null);
+    setStatusMessage(null);
+    setLoading(false);
+  }, []);
 
   const inputBackgroundColor = theme.dark ? '#1E1E1E' : '#FFFFFF';
 
@@ -86,11 +93,9 @@ export default function PhoneEntryScreen() {
       });
 
       if (apiError) {
-        throw new AuthError(
-          apiError.message ?? t('onboarding.phone_verification.error_send_failed'),
-          AuthErrorCode.UNKNOWN_ERROR,
-          true,
-        );
+        setError(apiError.message ?? t('onboarding.phone_verification.error_send_failed'));
+        setStatusMessage(null);
+        return;
       }
 
       setStatusMessage(t('onboarding.phone_verification.status_verification_code_sent'));
@@ -101,14 +106,11 @@ export default function PhoneEntryScreen() {
         params: { phone: normalizedPhone },
       });
     } catch (err) {
-      let errorMsg = t('onboarding.phone_verification.error_generic');
-      if (err instanceof AuthError) {
-        errorMsg = err.message;
-      } else if (err instanceof Error && isNetworkError(err)) {
-        errorMsg = t('onboarding.phone_verification.error_connection');
-      } else if (err instanceof Error) {
-        errorMsg = err.message;
-      }
+      const errorMsg = err instanceof Error && isNetworkError(err)
+        ? t('onboarding.phone_verification.error_connection')
+        : err instanceof Error
+          ? err.message
+          : t('onboarding.phone_verification.error_generic');
       setError(errorMsg);
       setStatusMessage(null);
     } finally {

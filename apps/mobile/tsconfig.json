@@ -3,6 +3,9 @@
   "compilerOptions": {
     "strict": true,
     "resolveJsonModule": true,
+    // Required for WatermelonDB decorators
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "paths": {
       "@/*": [
         "./src/*"

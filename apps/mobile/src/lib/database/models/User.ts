@@ -8,7 +8,6 @@ import {
   date,
   readonly,
   relation,
-  writer,
 } from '@nozbe/watermelondb/decorators';
 
 import type { Project } from './Project';
@@ -57,46 +56,5 @@ export class User extends Model {
 
   get hasCompletedOnboarding(): boolean {
     return this.onboardingCompletedAt !== null;
-  }
-
-  // Actions (using @writer for sync-aware updates)
-  @writer async updateProfile(updates: Partial<{
-    name: string;
-    email: string;
-    image: string;
-    jobTitle: string;
-    companyName: string;
-    timezone: string;
-    countryCode: string;
-    onboardingCompletedAt: Date;
-    lastModified: number;
-  }>): Promise<void> {
-    // Update will automatically set _status and _changed for sync
-    await this.update(updates as any);
-  }
-
-  @writer async markOnboardingComplete(): Promise<void> {
-    const now = new Date();
-    await this.update({
-      onboardingCompletedAt: now,
-      updatedAt: now,
-    } as any);
-  }
-
-  @writer async updateLastLogin(): Promise<void> {
-    const now = new Date();
-    await this.update({
-      lastLoginAt: now,
-      updatedAt: now,
-    } as any);
-  }
-
-  @writer async softDelete(): Promise<void> {
-    const now = new Date();
-    await this.update({
-      deletedAt: now,
-      status: 'inactive',
-      updatedAt: now,
-    } as any);
   }
 }

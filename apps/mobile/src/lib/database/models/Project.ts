@@ -8,7 +8,6 @@ import {
   date,
   readonly,
   relation,
-  writer,
 } from '@nozbe/watermelondb/decorators';
 
 import type { User } from './User';
@@ -40,25 +39,4 @@ export class Project extends Model {
   // Relations
   @relation('user', 'owner_id') owner!: User;
   @relation('tasks', 'project_id') tasks!: Task[];
-
-  // Actions
-  @writer async updateDetails(updates: Partial<{
-    name: string;
-    address: string;
-    status: string;
-  }>): Promise<void> {
-    const now = new Date();
-    await this.update({
-      ...updates,
-      updatedAt: now,
-    } as any);
-  }
-
-  @writer async softDelete(): Promise<void> {
-    const now = new Date();
-    await this.update({
-      deletedAt: now,
-      updatedAt: now,
-    } as any);
-  }
 }

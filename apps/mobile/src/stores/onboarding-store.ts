@@ -111,11 +111,13 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       }
 
       // Write to local WatermelonDB (offline-first)
+      const userEmail = state.personalInfo.email?.trim().toLowerCase() || null;
       await database.write(async () => {
         try {
           const existingUser = await database.get<User>('user').find(userId);
           await existingUser.update((u) => {
             u.name = normalizedName;
+            u.email = userEmail || session.data!.user.email;
             if (imageUrl) u.image = imageUrl;
             if (state.personalInfo.jobTitle?.trim()) u.jobTitle = state.personalInfo.jobTitle.trim();
             if (state.personalInfo.companyName?.trim()) u.companyName = state.personalInfo.companyName.trim();
@@ -126,7 +128,7 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
           await database.get<User>('user').create((u) => {
             u._raw.id = userId;
             u.name = normalizedName;
-            u.email = session.data!.user.email;
+            u.email = userEmail || session.data!.user.email;
             u.emailVerified = session.data!.user.emailVerified;
             u.image = imageUrl ?? null;
             u.phoneNumber = state.personalInfo.phoneNumber || null;
@@ -137,24 +139,11 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
           });
         }
       });
-
-      // Sync to server (non-blocking)
+    // Sync to server (non-blocking, sync will push updated email to backend)
       try {
         await syncDatabase();
       } catch {
         // Sync will retry automatically on next app launch
-      }
-
-      // Update email if user provided a new one
-      const userEmail = state.personalInfo.email?.trim().toLowerCase();
-      const currentEmail = session.data.user.email;
-      const isTempEmail = currentEmail?.endsWith('@temp.com');
-      if (userEmail && (isTempEmail || userEmail !== currentEmail)) {
-        try {
-          await authClient.changeEmail({ newEmail: userEmail });
-        } catch {
-          // Email change request failed
-        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to complete onboarding';

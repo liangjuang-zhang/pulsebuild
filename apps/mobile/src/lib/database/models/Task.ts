@@ -8,7 +8,6 @@ import {
   date,
   readonly,
   relation,
-  writer,
 } from '@nozbe/watermelondb/decorators';
 
 import type { Project } from './Project';
@@ -43,29 +42,4 @@ export class Task extends Model {
   // Relations
   @relation('projects', 'project_id') project!: Project;
   @relation('user', 'assigned_to') assignee!: User | null;
-
-  // Actions
-  @writer async updateStatus(status: string): Promise<void> {
-    const now = new Date();
-    await this.update({
-      status,
-      updatedAt: now,
-    } as any);
-  }
-
-  @writer async assignTo(userId: string): Promise<void> {
-    const now = new Date();
-    await this.update({
-      assignedTo: userId,
-      updatedAt: now,
-    } as any);
-  }
-
-  @writer async softDelete(): Promise<void> {
-    const now = new Date();
-    await this.update({
-      deletedAt: now,
-      updatedAt: now,
-    } as any);
-  }
 }

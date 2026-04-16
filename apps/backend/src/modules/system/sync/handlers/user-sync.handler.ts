@@ -18,7 +18,7 @@ type UserInsert = typeof user.$inferInsert;
 
 @Injectable()
 export class UserSyncHandler extends BaseTableSyncHandler {
-  tableName = 'users';
+  tableName = 'user';
 
   /**
    * 构建范围查询条件 - 用户表只查询当前用户
@@ -109,6 +109,7 @@ export class UserSyncHandler extends BaseTableSyncHandler {
    * 转换为 WatermelonDB 格式
    *
    * Date 对象 → 毫秒时间戳
+   * 字段名使用 snake_case（匹配 WatermelonDB schema）
    */
   toRawRecord(record: unknown): Record<string, string | number | boolean | null> {
     const typedRecord = record as UserRecord;
@@ -116,20 +117,22 @@ export class UserSyncHandler extends BaseTableSyncHandler {
       id: typedRecord.id,
       name: typedRecord.name,
       email: typedRecord.email,
-      emailVerified: typedRecord.emailVerified,
+      email_verified: typedRecord.emailVerified,
       image: typedRecord.image,
-      phoneNumber: typedRecord.phoneNumber,
-      phoneNumberVerified: typedRecord.phoneNumberVerified,
-      countryCode: typedRecord.countryCode,
+      phone_number: typedRecord.phoneNumber,
+      phone_number_verified: typedRecord.phoneNumberVerified,
+      country_code: typedRecord.countryCode,
       timezone: typedRecord.timezone,
-      jobTitle: typedRecord.jobTitle,
-      companyName: typedRecord.companyName,
+      job_title: typedRecord.jobTitle,
+      company_name: typedRecord.companyName,
       status: typedRecord.status,
-      lastModified: typedRecord.lastModified?.getTime() ?? Date.now(),
-      deletedAt: typedRecord.deletedAt?.getTime() ?? null,
-      lastLoginAt: typedRecord.lastLoginAt?.getTime() ?? null,
-      createdAt: typedRecord.createdAt?.getTime() ?? Date.now(),
-      updatedAt: typedRecord.updatedAt?.getTime() ?? Date.now(),
+      notifications_enabled: typedRecord.notificationsEnabled ?? false,
+      onboarding_completed_at: typedRecord.onboardingCompletedAt?.getTime() ?? null,
+      last_modified: typedRecord.lastModified?.getTime() ?? Date.now(),
+      deleted_at: typedRecord.deletedAt?.getTime() ?? null,
+      last_login_at: typedRecord.lastLoginAt?.getTime() ?? null,
+      created_at: typedRecord.createdAt?.getTime() ?? Date.now(),
+      updated_at: typedRecord.updatedAt?.getTime() ?? Date.now(),
     };
   }
 
@@ -137,23 +140,26 @@ export class UserSyncHandler extends BaseTableSyncHandler {
    * 转换为数据库插入格式
    *
    * 毫秒时间戳 → Date 对象
+   * 注意：WatermelonDB 推送的是 snake_case 字段名
    */
   toDbInsert(raw: Record<string, string | number | boolean | null>): unknown {
     return {
       id: raw.id as string,
       name: raw.name as string,
       email: raw.email as string,
-      emailVerified: (raw.emailVerified as boolean) ?? false,
+      emailVerified: (raw.email_verified as boolean) ?? false,
       image: raw.image as string | null,
-      phoneNumber: raw.phoneNumber as string | null,
-      phoneNumberVerified: (raw.phoneNumberVerified as boolean) ?? false,
-      countryCode: raw.countryCode as string | null,
+      phoneNumber: (raw.phone_number as string) ?? null,
+      phoneNumberVerified: (raw.phone_number_verified as boolean) ?? false,
+      countryCode: (raw.country_code as string) ?? null,
       timezone: raw.timezone as string | null,
-      jobTitle: raw.jobTitle as string | null,
-      companyName: raw.companyName as string | null,
+      jobTitle: (raw.job_title as string) ?? null,
+      companyName: (raw.company_name as string) ?? null,
       status: (raw.status as string) ?? 'active',
-      lastModified: new Date((raw.lastModified as number) ?? Date.now()),
-      updatedAt: new Date((raw.updatedAt as number) ?? Date.now()),
+      notificationsEnabled: (raw.notifications_enabled as boolean) ?? false,
+      onboardingCompletedAt: raw.onboarding_completed_at ? new Date(raw.onboarding_completed_at as number) : null,
+      lastModified: new Date((raw.last_modified as number) ?? Date.now()),
+      updatedAt: new Date((raw.updated_at as number) ?? Date.now()),
     } as UserInsert;
   }
 }

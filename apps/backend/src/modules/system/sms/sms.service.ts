@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import twilio, { Twilio } from 'twilio';
+import { SendRateLimiter } from '../../../common/throttling';
 
 @Injectable()
 export class SmsService {
@@ -9,7 +10,14 @@ export class SmsService {
   private readonly fromNumber: string | null;
   private readonly isDevelopment: boolean;
 
-  constructor(private readonly configService: ConfigService) {
+  /** 每个手机号 60 秒内最多发 3 条 */
+  private static readonly SMS_MAX_PER_WINDOW = 3;
+  private static readonly SMS_WINDOW_MS = 60_000;
+
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly rateLimiter: SendRateLimiter,
+  ) {
     const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
     this.isDevelopment = nodeEnv !== 'production';
     this.fromNumber = this.configService.get<string>('TWILIO_FROM_NUMBER') ?? null;
@@ -40,6 +48,11 @@ export class SmsService {
   private async send(phone: string, message: string, label: string): Promise<void> {
     if (this.isDevelopment) {
       this.logger.warn(`[DEV SMS] ${label} → ${phone}: ${message}`);
+      return;
+    }
+
+    if (!this.rateLimiter.consume('sms', phone, SmsService.SMS_MAX_PER_WINDOW, SmsService.SMS_WINDOW_MS)) {
+      this.logger.warn(`SMS rate limit exceeded: ${label} -> ${phone}, skipping send`);
       return;
     }
 

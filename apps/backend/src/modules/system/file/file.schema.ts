@@ -60,6 +60,45 @@ export const FileDetailInputSchema = z.object({
 });
 export type FileDetailInput = z.infer<typeof FileDetailInputSchema>;
 
+// ==================== 预签名上传 ====================
+
+/** 预签名上传请求参数 */
+export const GetUploadUrlInputSchema = z.object({
+  /** 文件名（含扩展名） */
+  fileName: z.string().min(1),
+  /** MIME 类型 */
+  mimeType: z.string().min(1),
+  /** 文件大小（字节） */
+  fileSize: z.number().int().min(1).max(100 * 1024 * 1024), // 最大 100MB
+  /** 业务分组 */
+  groupName: z.string().min(1),
+  /** 业务 ID（可选） */
+  bizId: z.string().optional(),
+});
+export type GetUploadUrlInput = z.infer<typeof GetUploadUrlInputSchema>;
+
+/** 预签名上传 URL 结果 */
+export const UploadUrlResultSchema = z.object({
+  /** 预签名上传 URL */
+  uploadUrl: z.string(),
+  /** 存储键 */
+  fileKey: z.string(),
+  /** URL 有效期（秒） */
+  expiresIn: z.number(),
+  /** 预生成的文件 ID（用于后续 confirmUpload） */
+  fileId: z.string(),
+});
+export type UploadUrlResult = z.infer<typeof UploadUrlResultSchema>;
+
+/** 确认上传请求参数 */
+export const ConfirmUploadInputSchema = z.object({
+  /** 预生成的文件 ID */
+  fileId: z.string().min(1),
+  /** 存储键（用于验证） */
+  fileKey: z.string().min(1),
+});
+export type ConfirmUploadInput = z.infer<typeof ConfirmUploadInputSchema>;
+
 // ==================== 分页结果 ====================
 
 /** 分页文件列表 */

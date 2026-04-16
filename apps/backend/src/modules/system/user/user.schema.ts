@@ -1,5 +1,26 @@
 import { z } from 'zod';
 
+// ==================== Onboarding 联系方式校验 ====================
+
+/** 校验联系方式唯一性输入 */
+export const ValidateContactInputSchema = z.object({
+  /** 当前用户 ID（排除自身） */
+  userId: z.string().min(1),
+  /** 手机号（E.164 格式） */
+  phoneNumber: z.string().max(20).optional(),
+  /** 邮箱 */
+  email: z.email().max(100).optional(),
+});
+export type ValidateContactInput = z.infer<typeof ValidateContactInputSchema>;
+
+/** 校验联系方式唯一性结果 */
+export const ValidateContactResultSchema = z.object({
+  available: z.boolean(),
+  /** 冲突的字段名 */
+  conflicts: z.array(z.enum(['email', 'phoneNumber'])),
+});
+export type ValidateContactResult = z.infer<typeof ValidateContactResultSchema>;
+
 // ==================== 用户-角色分配 ====================
 
 /** 分配用户角色 */

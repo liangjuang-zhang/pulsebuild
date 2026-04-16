@@ -1,12 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { TRPCError } from '@trpc/server';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull, ne } from 'drizzle-orm';
 import * as crypto from 'node:crypto';
 import { DATABASE_CONNECTION } from '../../../database/database.module';
 import * as schema from '../../../database';
+import { user } from '../../../database/auth.schema';
 import { sysPermission, sysRole, sysRolePermission, sysUserRole } from '../../../database/rbac.schema';
-import type { AssignUserRoleInput, RemoveUserRoleInput, UserPermissionsResult, UserRoleInfo, UserRoleQueryInput } from './user.schema';
+import type { AssignUserRoleInput, RemoveUserRoleInput, UserPermissionsResult, UserRoleInfo, UserRoleQueryInput, ValidateContactInput, ValidateContactResult } from './user.schema';
 
 @Injectable()
 export class UserService {
@@ -17,7 +18,40 @@ export class UserService {
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 
-  /** 分配角色给用户 */
+  /** 校验联系方式（email / phoneNumber）是否已被其他用户占用 */
+  async validateContact(input: ValidateContactInput): Promise<ValidateContactResult> {
+    this.logger.debug(`validateContact input: ${JSON.stringify(input)}`);
+    const conflicts: Array<'email' | 'phoneNumber'> = [];
+    this.logger.debug(`Validating contact for user ${input.userId}: email=${input.email}, phoneNumber=${input.phoneNumber}`);
+    if (input.email) {
+      const normalizedEmail = input.email.trim().toLowerCase();
+      const existing = await this.db
+        .select({ id: user.id })
+        .from(user)
+        .where(and(eq(user.email, normalizedEmail), ne(user.id, input.userId)))
+        .limit(1);
+      if (existing.length > 0) {
+        conflicts.push('email');
+      }
+    }
+
+    if (input.phoneNumber) {
+      const existing = await this.db
+        .select({ id: user.id })
+        .from(user)
+        .where(and(eq(user.phoneNumber, input.phoneNumber), ne(user.id, input.userId)))
+        .limit(1);
+      if (existing.length > 0) {
+        conflicts.push('phoneNumber');
+      }
+    }
+
+    return {
+      available: conflicts.length === 0,
+      conflicts,
+    };
+  }
+
   async assignRole(input: AssignUserRoleInput): Promise<void> {
     const role = await this.db.select().from(sysRole).where(eq(sysRole.id, input.roleId)).limit(1);
     if (!role[0]) {

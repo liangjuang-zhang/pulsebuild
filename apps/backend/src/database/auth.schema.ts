@@ -26,6 +26,10 @@ export const user = pgTable(
     jobTitle: varchar('job_title', { length: 120 }),
     companyName: varchar('company_name', { length: 120 }),
     status: varchar('status', { length: 20 }).default('active').notNull(),
+    notificationsEnabled: boolean('notifications_enabled').default(false).notNull(),
+    onboardingCompletedAt: timestamp('onboarding_completed_at'),
+    /** JSON 数组: 引导跳过的步骤编号，如 [2, 3] */
+    onboardingSkippedSteps: text('onboarding_skipped_steps'),
     deletedAt: timestamp('deleted_at'),
     lastLoginAt: timestamp('last_login_at'),
     // Sync tracking field (for WatermelonDB sync)

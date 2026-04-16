@@ -6,6 +6,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { createAuth } from './modules/auth/auth';
 import { AppContext } from './modules/auth/app.context';
 import { AuthMiddleware } from './modules/auth/auth.middleware';
+import { PermissionMiddleware } from './modules/auth/permission.middleware';
 import { DATABASE_CONNECTION, DatabaseModule } from './database/database.module';
 import { TRPCModule } from 'nestjs-trpc';
 import { HealthRouter } from './modules/system/health.router';
@@ -23,13 +24,15 @@ import { SyncModule } from './modules/system/sync/sync.module';
 import { SyncRouter } from './modules/system/sync/sync.router';
 import { SmsModule } from './modules/system/sms/sms.module';
 import { SmsService } from './modules/system/sms/sms.service';
-import { PermissionGuard } from './modules/system/permission/permission.guard';
+import { EmailModule } from './modules/system/email/email.module';
+import { EmailService } from './modules/system/email/email.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     DatabaseModule,
     SmsModule,
+    EmailModule,
     GeoModule,
     FileModule,
     RoleModule,
@@ -40,10 +43,10 @@ import { PermissionGuard } from './modules/system/permission/permission.guard';
       context: AppContext,
     }),
     AuthModule.forRootAsync({
-      imports: [DatabaseModule, SmsModule],
-      inject: [DATABASE_CONNECTION, SmsService],
-      useFactory: (database: NodePgDatabase, smsService: SmsService) => ({
-        auth: createAuth(database, smsService),
+      imports: [DatabaseModule, SmsModule, EmailModule],
+      inject: [DATABASE_CONNECTION, SmsService, EmailService],
+      useFactory: (database: NodePgDatabase, smsService: SmsService, emailService: EmailService) => ({
+        auth: createAuth(database, smsService, emailService),
       }),
     }),
   ],
@@ -52,6 +55,7 @@ import { PermissionGuard } from './modules/system/permission/permission.guard';
     // tRPC Context 和 Middleware
     AppContext,
     AuthMiddleware,
+    PermissionMiddleware,
     // tRPC Routers
     HealthRouter,
     GeoRouter,
@@ -64,10 +68,6 @@ import { PermissionGuard } from './modules/system/permission/permission.guard';
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: PermissionGuard,
     },
   ],
 })

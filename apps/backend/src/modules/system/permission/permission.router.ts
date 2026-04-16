@@ -1,48 +1,63 @@
 import { Inject } from '@nestjs/common';
-import { Mutation, Query, Router } from 'nestjs-trpc';
+import { Query, Mutation, Router, UseMiddlewares, Input } from 'nestjs-trpc';
 import { z } from 'zod';
 import { PermissionService } from './permission.service';
 import { CreatePermissionInputSchema, DeletePermissionInputSchema, PermissionSchema, PermissionTreeNodeSchema, UpdatePermissionInputSchema } from './permission.schema';
 import type { CreatePermissionInput, DeletePermissionInput, UpdatePermissionInput } from './permission.schema';
-import { RequirePermissions } from './permission.decorator';
+import { AuthMiddleware } from '../../auth/auth.middleware';
+import { PermissionMiddleware } from '../../auth/permission.middleware';
 
 /** 权限管理 tRPC 路由 */
 @Router({ alias: 'permission' })
+@UseMiddlewares(AuthMiddleware, PermissionMiddleware)
 export class PermissionRouter {
   constructor(@Inject(PermissionService) private readonly permissionService: PermissionService) {}
 
   /** 查询权限列表（扁平） */
-  @RequirePermissions('system.permission.list')
-  @Query({ output: z.array(PermissionSchema) })
+  @Query({
+    output: z.array(PermissionSchema),
+    meta: { permissions: ['system.permission.list'] },
+  })
   async list() {
     return this.permissionService.list();
   }
 
   /** 查询权限树 */
-  @RequirePermissions('system.permission.tree')
-  @Query({ output: z.array(PermissionTreeNodeSchema) })
+  @Query({
+    output: z.array(PermissionTreeNodeSchema),
+    meta: { permissions: ['system.permission.tree'] },
+  })
   async tree() {
     return this.permissionService.tree();
   }
 
   /** 创建权限 */
-  @RequirePermissions('system.permission.create')
-  @Mutation({ input: CreatePermissionInputSchema, output: PermissionSchema })
-  async create(@Inject('input') input: CreatePermissionInput) {
+  @Mutation({
+    input: CreatePermissionInputSchema,
+    output: PermissionSchema,
+    meta: { permissions: ['system.permission.create'] },
+  })
+  async create(@Input() input: CreatePermissionInput) {
     return this.permissionService.create(input);
   }
 
   /** 更新权限 */
-  @RequirePermissions('system.permission.update')
-  @Mutation({ input: UpdatePermissionInputSchema, output: PermissionSchema })
-  async update(@Inject('input') input: UpdatePermissionInput) {
+  @Mutation({
+    input: UpdatePermissionInputSchema,
+    output: PermissionSchema,
+    meta: { permissions: ['system.permission.update'] },
+  })
+  async update(@Input() input: UpdatePermissionInput) {
     return this.permissionService.update(input);
   }
 
   /** 删除权限 */
-  @RequirePermissions('system.permission.delete')
-  @Mutation({ input: DeletePermissionInputSchema, output: z.void() })
-  async remove(@Inject('input') input: DeletePermissionInput) {
+  @Mutation({
+    input: DeletePermissionInputSchema,
+    output: z.void(),
+    meta: { permissions: ['system.permission.delete'] },
+  })
+  async remove(@Input() input: DeletePermissionInput) {
     return this.permissionService.remove(input.id);
   }
 }

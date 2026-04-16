@@ -19,6 +19,9 @@ export interface StorageProvider {
 
   /** 检查文件是否存在 */
   exists(fileKey: string): Promise<boolean>;
+
+  /** 生成预签名上传 URL（客户端直传） */
+  getPresignedUploadUrl(input: PresignedUploadInput): Promise<PresignedUploadResult>;
 }
 
 export interface UploadInput {
@@ -35,6 +38,24 @@ export interface UploadResult {
   fileKey: string;
   /** 文件大小（字节） */
   fileSize: number;
+}
+
+export interface PresignedUploadInput {
+  /** 存储路径/键 */
+  fileKey: string;
+  /** MIME 类型 */
+  mimeType: string;
+  /** 预签名 URL 有效期（秒），默认 3600 */
+  expiresIn?: number;
+}
+
+export interface PresignedUploadResult {
+  /** 预签名上传 URL */
+  uploadUrl: string;
+  /** 存储键 */
+  fileKey: string;
+  /** URL 有效期（秒） */
+  expiresIn: number;
 }
 
 /** 存储提供商 DI Token */

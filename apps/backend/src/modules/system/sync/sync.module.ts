@@ -9,11 +9,13 @@
  * - SyncRouter 使用 @UseMiddlewares(AuthMiddleware) 应用认证
  */
 import { Module, OnModuleInit } from '@nestjs/common';
+import { DatabaseModule } from '../../../database/database.module';
 import { SyncService } from './sync.service';
 import { SyncRouter } from './sync.router';
 import { UserSyncHandler } from './handlers/user-sync.handler';
 
 @Module({
+  imports: [DatabaseModule],
   providers: [SyncService, SyncRouter, UserSyncHandler],
   exports: [SyncService],
 })

@@ -1,12 +1,12 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { SmsService } from './sms.service';
+import { EmailService } from './email.service';
 import { SendRateLimiter } from '../../../common/throttling';
 
 @Global()
 @Module({
   imports: [ConfigModule],
-  providers: [SmsService, SendRateLimiter],
-  exports: [SmsService, SendRateLimiter],
+  providers: [EmailService, SendRateLimiter],
+  exports: [EmailService, SendRateLimiter],
 })
-export class SmsModule {}
+export class EmailModule {}

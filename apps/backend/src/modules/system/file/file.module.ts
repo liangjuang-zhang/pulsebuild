@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DatabaseModule } from '../../../database/database.module';
 import { FileService } from './file.service';
 import { FileRouter } from './file.router';
-import { LocalStorageProvider } from './storage/local.provider';
+import { R2StorageProvider } from './storage/r2.provider';
 import { STORAGE_PROVIDER } from './storage/storage.interface';
 
 @Module({
@@ -13,7 +13,14 @@ import { STORAGE_PROVIDER } from './storage/storage.interface';
     FileRouter,
     {
       provide: STORAGE_PROVIDER,
-      useClass: LocalStorageProvider,
+      useFactory: (configService: ConfigService) => {
+        const accountId = configService.get<string>('CLOUDFLARE_R2_ACCOUNT_ID');
+        if (!accountId) {
+          throw new Error('CLOUDFLARE_R2_ACCOUNT_ID is required. Please configure R2 storage.');
+        }
+        return new R2StorageProvider(configService);
+      },
+      inject: [ConfigService],
     },
   ],
   exports: [FileService],

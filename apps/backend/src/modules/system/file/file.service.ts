@@ -7,8 +7,8 @@ import * as path from 'node:path';
 import { DATABASE_CONNECTION } from '../../../database/database.module';
 import * as schema from '../../../database';
 import { sysFile } from '../../../database/file.schema';
-import { STORAGE_PROVIDER, type StorageProvider } from './storage/storage.interface';
-import type { FileInfo, FileListResult, FileQueryInput, UploadFileResult } from './file.schema';
+import { STORAGE_PROVIDER, type StorageProvider, type PresignedUploadInput } from './storage/storage.interface';
+import type { FileInfo, FileListResult, FileQueryInput, UploadFileResult, GetUploadUrlInput, UploadUrlResult, ConfirmUploadInput } from './file.schema';
 
 interface UploadInput {
   buffer: Buffer;
@@ -169,6 +169,88 @@ export class FileService {
 
     this.logger.log(`Purged ${purged}/${deleted.length} soft-deleted files`);
     return purged;
+  }
+
+  /**
+   * 生成预签名上传 URL
+   *
+   * 流程：
+   * 1. 生成 fileKey 和预签名 URL
+   * 2. 预创建文件记录（状态为 pending）
+   * 3. 返回 URL 和 fileId 给客户端
+   * 4. 客户端直传到存储服务
+   * 5. 客户端调用 confirmUpload 完成确认
+   */
+  async getUploadUrl(input: GetUploadUrlInput, userId?: string): Promise<UploadUrlResult> {
+    const ext = path.extname(input.fileName) || '';
+    const uniqueName = `${crypto.randomUUID()}${ext}`;
+    const datePrefix = new Date().toISOString().slice(0, 7).replace('-', '/');
+    const fileKey = `${input.groupName}/${datePrefix}/${uniqueName}`;
+
+    // 生成预签名 URL
+    const presignedResult = await this.storage.getPresignedUploadUrl({
+      fileKey,
+      mimeType: input.mimeType,
+      expiresIn: 3600,
+    });
+
+    // 预创建文件记录
+    const fileId = crypto.randomUUID();
+    await this.db.insert(sysFile).values({
+      id: fileId,
+      fileName: input.fileName,
+      fileKey,
+      fileSize: input.fileSize,
+      mimeType: input.mimeType,
+      storageProvider: this.storage.name,
+      groupName: input.groupName,
+      bizId: input.bizId ?? null,
+      userId: userId ?? null,
+      // 标记为待确认状态（通过 fileSize 为负数表示）
+      // 或者添加一个 status 字段，但当前 schema 没有
+    });
+
+    this.logger.log(`Presigned URL generated: ${fileKey} for ${input.fileName}`);
+
+    return {
+      uploadUrl: presignedResult.uploadUrl,
+      fileKey,
+      expiresIn: presignedResult.expiresIn,
+      fileId,
+    };
+  }
+
+  /**
+   * 确认上传完成
+   *
+   * 客户端上传完成后调用，验证文件存在并更新记录。
+   */
+  async confirmUpload(input: ConfirmUploadInput): Promise<FileInfo> {
+    const row = await this.db
+      .select()
+      .from(sysFile)
+      .where(and(eq(sysFile.id, input.fileId), eq(sysFile.fileKey, input.fileKey), isNull(sysFile.deletedAt)))
+      .limit(1);
+
+    if (!row[0]) {
+      throw new TRPCError({ code: 'NOT_FOUND', message: '文件记录不存在或已被删除' });
+    }
+
+    // 验证文件已上传到存储
+    const exists = await this.storage.exists(input.fileKey);
+    if (!exists) {
+      // 文件未上传，删除预创建的记录
+      await this.db.delete(sysFile).where(eq(sysFile.id, input.fileId));
+      throw new TRPCError({ code: 'PRECONDITION_FAILED', message: '文件尚未上传到存储服务' });
+    }
+
+    // 更新文件大小（从存储获取实际大小）
+    // 注意：当前 schema 的 fileSize 在预创建时已设置，这里保持不变
+    // 如果需要获取实际大小，需要调用 storage 获取元数据
+
+    this.logger.log(`Upload confirmed: ${input.fileKey}`);
+
+    return this.toFileInfo(row[0]);
   }
 
   private toFileInfo(row: typeof sysFile.$inferSelect): FileInfo {

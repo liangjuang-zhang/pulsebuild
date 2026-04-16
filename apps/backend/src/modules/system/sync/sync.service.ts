@@ -80,6 +80,15 @@ export class SyncService {
   async pushChanges(input: PushInput, userId: string): Promise<{ success: boolean }> {
     const { changes, lastPulledAt } = input;
 
+    // 添加日志追踪 push 数据
+    this.logger.log(`[同步] 用户 ${userId} 推送请求: lastPulledAt=${lastPulledAt}`);
+    for (const [tableName, tableChanges] of Object.entries(changes)) {
+      this.logger.log(`[同步] 表 ${tableName}: created=${tableChanges.created.length}, updated=${tableChanges.updated.length}, deleted=${tableChanges.deleted.length}`);
+      if (tableChanges.updated.length > 0) {
+        this.logger.log(`[同步] 更新数据: ${JSON.stringify(tableChanges.updated, null, 2)}`);
+      }
+    }
+
     try {
       // 在事务中应用所有变更
       await this.db.transaction(async (tx) => {

@@ -2,12 +2,12 @@
  * 应用 Context - tRPC 请求上下文
  *
  * 为所有 tRPC 路由提供统一的 context 结构。
- * 支持 Better Auth 的 session 信息注入。
+ * 主动从 cookie 解析 Better Auth session（tRPC 路由不经过 NestJS guard 管道）。
  */
 import { Injectable } from '@nestjs/common';
 import { TRPCContext } from 'nestjs-trpc';
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
-import { UserSession } from '@thallesp/nestjs-better-auth';
+import { AuthService, UserSession } from '@thallesp/nestjs-better-auth';
 import type { AuthInstance } from '../auth/auth';
 
 /** Better Auth 会话类型 */
@@ -23,7 +23,7 @@ export type AppContextType = {
   req: CreateExpressContextOptions['req'];
   /** Express response 对象 */
   res: CreateExpressContextOptions['res'];
-  /** 当前登录用户（由 AuthGuard 注入到 session） */
+  /** 当前登录用户 session */
   session?: SessionData;
   /** 用户 ID（快捷访问） */
   userId?: string;
@@ -32,14 +32,36 @@ export type AppContextType = {
 
 @Injectable()
 export class AppContext implements TRPCContext {
+  constructor(private readonly authService: AuthService<AuthInstance>) {}
+
   /**
    * 创建 tRPC context
    *
-   * 从 Express request 中提取 session 信息（由 Better Auth 的 AuthGuard 注入）
+   * 主动调用 Better Auth API 从 cookie 解析 session，
+   * 而非依赖 NestJS AuthGuard（tRPC 路由不走 guard 管道）。
    */
   async create(opts: CreateExpressContextOptions): Promise<AppContextType> {
-    // session 由 Better Auth 的 AuthGuard 注入到 request
-    const session = (opts.req as { session?: SessionData }).session;
+    let session: SessionData | undefined;
+
+    try {
+      // 将 Express req 转换为 Request 对象供 Better Auth 解析
+      const headers = new Headers();
+      for (const [key, value] of Object.entries(opts.req.headers)) {
+        if (typeof value === 'string') {
+          headers.set(key, value);
+        }
+      }
+
+      const result = await this.authService.api.getSession({
+        headers,
+      });
+
+      if (result) {
+        session = result as SessionData;
+      }
+    } catch {
+      // session 解析失败，保持 undefined
+    }
 
     return {
       req: opts.req,
